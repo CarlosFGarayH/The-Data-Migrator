@@ -28,3 +28,5 @@ CREATE TABLE towns (
 -- 3. Create Spatial Indexes (Vital for GridOS Data Fabric performance)
 CREATE INDEX idx_roads_geom ON roads USING GIST (geom);
 CREATE INDEX idx_towns_geom ON towns USING GIST (geom);
+
+SELECT id, sw_id, name, length_km, geom FROM roads;
