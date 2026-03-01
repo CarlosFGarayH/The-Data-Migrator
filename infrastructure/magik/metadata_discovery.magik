@@ -1,0 +1,37 @@
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# GE VERNOVA - DATA MIGRATOR PROJECT
+# Component: Metadata Discovery Service
+# Description: Standard metadata extraction for Smallworld 5.3.5
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+_block
+    _local target_collection_name << :min_road
+    _local coll << gis_program_manager.databases[:gis].collections[target_collection_name]
+    
+    _if coll _is _unset
+    _then
+        write("[ERROR]: Collection ", target_collection_name, " not found.")
+    _else
+        write("=== INITIATING METADATA DISCOVERY: ", coll.external_name, " ===")
+        
+        # Recorremos los campos físicos
+        _for f _over coll.physical_fields.elements()
+        _loop
+            _local f_name << f.name
+            
+            # Obtenemos nombres de tipo y almacenamiento físico (según manual Pág. 18)
+            _local f_type_name << f.type.name.default(:primitive_unset)
+            _local f_phys_storage << f.type.phys_type.default(:unknown)
+            _local f_mandatory << f.mandatory?
+            
+            # Usamos write estándar con tabuladores (%tab) para alinear las columnas
+            write("FIELD: ", f_name, %tab, 
+                  "| TYPE: ", f_type_name, %tab, 
+                  "| STORAGE: ", f_phys_storage, %tab, 
+                  "| REQ: ", f_mandatory)
+        _endloop
+        
+        write("=== DISCOVERY COMPLETE ===")
+    _endif
+_endblock
+$
