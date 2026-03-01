@@ -1,45 +1,49 @@
 package com.ge.vernova.adapter;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.UUID;
 
 public class MigrationEngine {
     public static void main(String[] args) {
-        System.out.println("=== GE VERNOVA LAB: MIGRATING ASSETS TO POSTGRESQL ===\n");
+        System.out.println("=== GE VERNOVA LAB: DYNAMIC METADATA RESOLUTION ===\n");
 
-        try (Connection conn = DatabaseConnector.getConnection()) {
-            System.out.println("[SUCCESS]: Connection established to 'vernova_migration_db'.");
+        // Simulación de la salida Magik que obtuvimos el Martes (Metadata Discovery)
+        String[][] discoveredMetadata = {
+            {"min_road_id", "ds_uint"},
+            {"name", "ds_charci"},
+            {"carriage_type", "ds_uint"},
+            {"road_type", "ds_uint"},
+            {"rwo_id", "ds_uint"},
+            {"ds!version", "ds_vstamp"}
+        };
 
-            GisAsset road = new GisAsset("roads");
-            road.setAttribute("sw_id", UUID.randomUUID());
-            road.setAttribute("name", "Highland Avenue");
-            road.setAttribute("length_km", 12.5);
-            
-            road.setAttribute("geom_wkt", "LINESTRING(-77.04 12.04, -77.05 12.05)");
-
-            insertRoadIntoPostGIS(conn, road);
-
-            System.out.println("\n[FINISH]: Data persisted in PostgreSQL successfully.");
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void insertRoadIntoPostGIS(Connection conn, GisAsset asset) throws SQLException {
-
-        String sql = "INSERT INTO roads (sw_id, name, length_km, geom) VALUES (?, ?, ?, ST_GeomFromText(?, 4326))";
+        System.out.println("Building Dynamic SQL Schema using TypeResolver...");
         
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setObject(1, asset.getAttributes().get("sw_id"));
-            pstmt.setString(2, (String) asset.getAttributes().get("name"));
-            pstmt.setDouble(3, (Double) asset.getAttributes().get("length_km"));
-            pstmt.setString(4, (String) asset.getAttributes().get("geom_wkt"));
-            
-            pstmt.executeUpdate();
-            System.out.println("[SQL ADAPTER]: Inserted asset '" + asset.getAttributes().get("name") + "' with GEOMETRY into table 'roads'.");
+        StringBuilder sqlBuilder = new StringBuilder("CREATE TABLE roads_dynamic (");
+
+        for (String[] field : discoveredMetadata) {
+            String fieldName = field[0];
+            String swType = field[1];
+
+            // AQUI USAMOS EL RESOLVER:
+            String sqlType = TypeResolver.resolveToSql(swType);
+
+            sqlBuilder.append("\n  ").append(fieldName).append(" ").append(sqlType).append(",");
+            System.out.println("[RESOLVER]: SW '" + swType + "' -> SQL '" + sqlType + "'");
+        }
+
+        // Limpiar la última coma y cerrar paréntesis
+        String finalSql = sqlBuilder.substring(0, sqlBuilder.length() - 1) + "\n);";
+
+        System.out.println("\nGenerated SQL for GridOS Persistence:");
+        System.out.println(finalSql);
+
+        // Prueba de conexión JDBC (Database Access Layer)
+        try (Connection conn = DatabaseConnector.getConnection()) {
+            System.out.println("\n[SUCCESS]: Connection verified. SQL Adapter is ready for Lab Day 2.");
+        } catch (SQLException e) {
+            System.err.println("[WARN]: DB Connection failed, but SQL Generation was successful.");
         }
     }
 }
