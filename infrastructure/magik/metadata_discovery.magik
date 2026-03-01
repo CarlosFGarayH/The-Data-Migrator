@@ -14,17 +14,17 @@ _block
     _else
         write("=== INITIATING METADATA DISCOVERY: ", coll.external_name, " ===")
         
-        # Recorremos los campos físicos
+        # We traverse the physical fields
         _for f _over coll.physical_fields.elements()
         _loop
             _local f_name << f.name
             
-            # Obtenemos nombres de tipo y almacenamiento físico (según manual Pág. 18)
+            # We obtain type names and physical storage (according to the manual, Page 18)
             _local f_type_name << f.type.name.default(:primitive_unset)
             _local f_phys_storage << f.type.phys_type.default(:unknown)
             _local f_mandatory << f.mandatory?
             
-            # Usamos write estándar con tabuladores (%tab) para alinear las columnas
+            # We use standard write with tabs (%tab) to align the columns
             write("FIELD: ", f_name, %tab, 
                   "| TYPE: ", f_type_name, %tab, 
                   "| STORAGE: ", f_phys_storage, %tab, 
